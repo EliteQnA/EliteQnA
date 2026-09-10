@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily JEE & MEXT Questions</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f6f9; color: #333; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+        .question-card { background: white; padding: 25px; margin-bottom: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #3498db; position: relative; }
+        .tag-container { margin-bottom: 10px; }
+        .tag { display: inline-block; padding: 4px 10px; margin-right: 5px; border-radius: 20px; font-size: 11px; font-weight: bold; color: white; text-transform: uppercase; }
+        .jee { background-color: #e74c3c; }
+        .mext { background-color: #2ecc71; }
+        .subject { background-color: #7f8c8d; }
+        .date { font-size: 12px; color: #95a5a6; position: absolute; top: 25px; right: 25px; }
+        .question-text { font-size: 18px; font-weight: 600; margin-top: 10px; line-height: 1.5; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .option-btn { padding: 12px; border: 1px solid #dcdde1; background: #fff; border-radius: 8px; cursor: pointer; text-align: left; font-size: 15px; transition: all 0.2s; }
+        .option-btn:hover { background: #f5f6fa; border-color: #3498db; }
+        .ans-section { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd; }
+        .ans-btn { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .ans-btn:hover { background: #2c3e50; }
+        .solution-text { display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-left: 3px solid #2ecc71; font-size: 14px; color: #27ae60; }
+    </style>
+</head>
+<body>
+
+    <h1>📚 Daily JEE & MEXT Preparation</h1>
+    <div id="questions-container">Loading questions, please wait...</div>
+
+    <script>
+        // ⚠️ PASTE YOUR COPIED BLUE LINK BETWEEN THE QUOTES BELOW:
+        const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-PjmKTHrqivTm0mAOKXIJugwg4HcEK24xcKDoRovINzk8PbZsN1VcO-VbdPbe3ysLSDjy7kFNZ7Pa/pub?output=csv";
+
+        function parseCSV(text) {
+            let lines = text.split('\n');
+            return lines.map(line => {
+                let result = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    let char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        result.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current.trim());
+                return result;
+            });
+        }
+
+        async function loadQuestions() {
+            try {
+                const response = await fetch(sheetCsvUrl);
+                const text = await response.text();
+                const rows = parseCSV(text);
+                
+                const container = document.getElementById('questions-container');
+                container.innerHTML = ''; 
+
+                // Skip Header row (i = 0)
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || row.length < 4) continue; 
+
+                    const date = row[0] || '';
+                    const exam = row[1] || 'JEE';
+                    const subject = row[2] || 'Physics';
+                    const qText = row[3] || '';
+                    const optA = row[4] || '';
+                    const optB = row[5] || '';
+                    const optC = row[6] || '';
+                    const optD = row[7] || '';
+                    const correctAns = row[8] || 'Not Provided';
+
+                    const examClass = exam.toLowerCase().includes('jee') ? 'jee' : 'mext';
+
+                    const cardHTML = `
+                        <div class="question-card">
+                            <div class="tag-container">
+                                <span class="tag ${examClass}">${exam}</span>
+                                <span class="tag subject">${subject}</span>
+                            </div>
+                            <span class="date">${date}</span>
+                            <div class="question-text">Q: ${qText}</div>
+                            
+                            <div class="options-grid">
+                                <button class="option-btn"><strong>A.</strong> ${optA}</button>
+                                <button class="option-btn"><strong>B.</strong> ${optB}</button>
+                                <button class="option-btn"><strong>C.</strong> ${optC}</button>
+                                <button class="option-btn"><strong>D.</strong> ${optD}</button>
+                            </div>
+
+                            <div class="ans-section">
+                                <button class="ans-btn" onclick="toggleAns(${i})">Show Correct Answer</button>
+                                <div id="sol-${i}" class="solution-text">
+                                    <strong>Correct Answer:</strong> ${correctAns}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += cardHTML;
+                }
+            } catch (error) {
+                container.innerHTML = "Error: Failed to load data. Please check your spreadsheet connection link.";
+                console.error(error);
+            }
+        }
+
+        function toggleAns(id) {
+            const solDiv = document.getElementById(`sol-${id}`);
+            if (solDiv.style.display === "block") {
+                solDiv.style.display = "none";
+            } else {
+                solDiv.style.display = "block";
+            }
+        }
+
+        loadQuestions();
+    </script>
+</body>
+</html>
