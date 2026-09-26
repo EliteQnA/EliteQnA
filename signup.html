@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EliteQnA — Create Account</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="nav">
+  <div class="logo">ELITEQNA</div>
+  <div class="links">
+    <a href="feed.html">Feed</a>
+    <a href="index.html">Sign in</a>
+  </div>
+</div>
+
+<div class="page" style="max-width:400px;">
+  <h1>Create your account</h1>
+  <p class="sub">Join students preparing for JEE, MEXT, and IGCSE.</p>
+
+  <form onsubmit="return false;">
+    <label for="name">Full name</label>
+    <input id="name" type="text" placeholder="Your name">
+
+    <label for="email">Email address</label>
+    <input id="email" type="email" placeholder="you@example.com">
+
+    <label for="exam">Which exam are you preparing for?</label>
+    <select id="exam">
+      <option>JEE</option>
+      <option>MEXT Scholarship</option>
+      <option>IGCSE</option>
+    </select>
+
+    <label for="pass">Password</label>
+    <input id="pass" type="password" placeholder="••••••••">
+
+    <button class="btn btn-gold" type="submit" style="width:100%; margin-top:22px;">Create account</button>
+  </form>
+  <p class="sub" style="margin-top:16px;">Already have an account? <a href="index.html">Sign in</a></p>
+</div>
+</body>
+</html>

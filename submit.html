@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EliteQnA — Post a Question</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="nav">
+  <div class="logo">ELITEQNA</div>
+  <div class="links">
+    <a href="feed.html">Feed</a>
+    <a href="submit.html" class="active">Post a question</a>
+    <a href="index.html">Sign in</a>
+  </div>
+</div>
+
+<div class="page" style="max-width:480px;">
+  <h1>Post a question</h1>
+  <p class="sub">Every photo is checked automatically before it's shown publicly.</p>
+
+  <form onsubmit="return false;">
+    <label for="exam">Exam</label>
+    <select id="exam">
+      <option>JEE</option>
+      <option>MEXT Scholarship</option>
+      <option>IGCSE</option>
+    </select>
+
+    <label for="subject">Subject</label>
+    <input id="subject" type="text" placeholder="e.g. Physics, Chemistry, Essay Writing">
+
+    <label for="title">Your question</label>
+    <textarea id="title" rows="4" placeholder="Type your question here..."></textarea>
+
+    <label for="photo">Attach a photo (optional)</label>
+    <input id="photo" type="file" accept="image/*">
+
+    <button class="btn btn-gold" type="submit" style="width:100%; margin-top:22px;">Post question</button>
+  </form>
+</div>
+</body>
+</html>
