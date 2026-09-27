@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EliteQnA — Question</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .answer-card{border-left:3px solid var(--gold); padding-left:16px;}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="logo">ELITEQNA</div>
+  <div class="links">
+    <a href="home.html">Home</a>
+    <a href="feed.html">Feed</a>
+    <a href="submit.html">Post a question</a>
+    <a href="index.html">Sign in</a>
+  </div>
+</div>
+
+<div class="page">
+  <div id="question-box"><p class="sub">Loading question…</p></div>
+
+  <h1 style="font-size:19px; margin-top:34px;">Answers</h1>
+  <div id="answers-list"><p class="sub">Loading answers…</p></div>
+
+  <div class="card" style="margin-top:20px;">
+    <label for="answer-text">Your answer</label>
+    <textarea id="answer-text" rows="4" placeholder="Write a clear, helpful answer..."></textarea>
+    <p id="answer-error" style="color:#e07a5f; font-size:13px; margin:10px 0 0; display:none;"></p>
+    <button class="btn btn-gold" id="answer-btn" style="margin-top:14px;">Post answer</button>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db } from "./firebase-init.js";
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { doc, getDoc, collection, addDoc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const BAD_WORDS = ["fuck","shit","bitch","porn","nude","sex","xxx"];
+  const params = new URLSearchParams(location.search);
+  const qId = params.get('id');
+
+  function escapeHTML(str){
+    const div = document.createElement('div');
+    div.textContent = String(str ?? '');
+    return div.innerHTML;
+  }
+  function safePhoto(url){
+    if (typeof url !== 'string') return null;
+    return (url.startsWith('https://firebasestorage.googleapis.com/') || url.startsWith('https://storage.googleapis.com/')) ? url : null;
+  }
+
+  const qBox = document.getElementById('question-box');
+  const ansList = document.getElementById('answers-list');
+
+  if (!qId) {
+    qBox.innerHTML = '<p class="sub">No question specified.</p>';
+  } else {
+    try {
+      const snap = await getDoc(doc(db, 'questions', qId));
+      if (!snap.exists()) {
+        qBox.innerHTML = '<p class="sub">This question no longer exists.</p>';
+      } else {
+        const q = snap.data();
+        const photo = safePhoto(q.photoURL);
+        qBox.innerHTML = `<span class="q-subject">${escapeHTML((q.exam||'').toUpperCase())} · ${escapeHTML((q.subject||'').toUpperCase())}</span>
+          <h1 style="margin-top:12px;">${escapeHTML(q.title)}</h1>
+          ${photo ? `<img src="${photo}" style="max-width:100%; border-radius:10px; margin:10px 0;">` : ''}
+          <p class="sub">Asked by ${escapeHTML(q.authorName || 'A student')}</p>`;
+      }
+    } catch (err) {
+      qBox.innerHTML = `<p class="sub">Couldn't load question: ${escapeHTML(err.message)}</p>`;
+    }
+
+    async function loadAnswers(){
+      const aq = query(collection(db, 'questions', qId, 'answers'), orderBy('createdAt', 'asc'));
+      const snap = await getDocs(aq);
+      if (snap.empty) {
+        ansList.innerHTML = '<p class="sub">No answers yet — be the first to help!</p>';
+        return;
+      }
+      ansList.innerHTML = snap.docs.map(d => {
+        const a = d.data();
+        return `<div class="card answer-card">
+          <p style="margin:0 0 8px;">${escapeHTML(a.text)}</p>
+          <span class="q-meta">${escapeHTML(a.authorName || 'A student')}</span>
+        </div>`;
+      }).join('');
+    }
+    loadAnswers();
+
+    let user = null;
+    onAuthStateChanged(auth, (u) => { user = u; });
+
+    document.getElementById('answer-btn').addEventListener('click', async () => {
+      const errorEl = document.getElementById('answer-error');
+      const btn = document.getElementById('answer-btn');
+      errorEl.style.display = 'none';
+
+      if (!user) {
+        errorEl.textContent = 'Please sign in to post an answer.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      const text = document.getElementById('answer-text').value.trim();
+      if (!text) {
+        errorEl.textContent = 'Write an answer first.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      const lower = text.toLowerCase();
+      if (BAD_WORDS.some(w => lower.includes(w))) {
+        errorEl.textContent = 'Your answer contains language that is not allowed here.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Posting...';
+      try {
+        await addDoc(collection(db, 'questions', qId, 'answers'), {
+          text,
+          authorId: user.uid,
+          authorName: user.displayName || 'A student',
+          createdAt: Date.now()
+        });
+        document.getElementById('answer-text').value = '';
+        await loadAnswers();
+      } catch (err) {
+        errorEl.textContent = err.message.replace('Firebase: ', '');
+        errorEl.style.display = 'block';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Post answer';
+    });
+  }
+</script>
+</body>
+</html>

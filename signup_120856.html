@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EliteQnA — Create Account</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="nav">
+  <div class="logo">ELITEQNA</div>
+  <div class="links">
+    <a href="home.html">Home</a>
+    <a href="feed.html">Feed</a>
+    <a href="index.html">Sign in</a>
+  </div>
+</div>
+
+<div class="page" style="max-width:400px;">
+  <h1>Create your account</h1>
+  <p class="sub">Join students preparing for JEE, MEXT, and IGCSE.</p>
+
+  <form id="signup-form">
+    <label for="name">Full name</label>
+    <input id="name" type="text" placeholder="Your name">
+
+    <label for="email">Email address</label>
+    <input id="email" type="email" placeholder="you@example.com">
+
+    <label for="exam">Which exam are you preparing for?</label>
+    <select id="exam">
+      <option>JEE</option>
+      <option>MEXT Scholarship</option>
+      <option>IGCSE</option>
+    </select>
+
+    <label for="pass">Password</label>
+    <div style="position:relative;">
+      <input id="pass" type="password" placeholder="••••••••">
+      <button type="button" id="toggle-pass" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); font-size:11px; cursor:pointer; font-family:inherit;">Show</button>
+    </div>
+
+    <p id="signup-error" style="color:#e07a5f; font-size:13px; margin:14px 0 0; display:none;"></p>
+    <button class="btn btn-gold" id="signup-btn" type="submit" style="width:100%; margin-top:22px;">Create account</button>
+  </form>
+  <div class="divider" style="display:flex; align-items:center; gap:10px; margin:20px 0 14px; font-size:11px; color:var(--muted);">OR CONTINUE WITH</div>
+  <div style="display:flex; gap:10px;">
+    <button type="button" id="google-btn" class="btn btn-outline" style="flex:1;">Google</button>
+    <button type="button" id="github-btn" class="btn btn-outline" style="flex:1;">GitHub</button>
+  </div>
+  <p class="sub" style="margin-top:16px;">Already have an account? <a href="index.html">Sign in</a></p>
+</div>
+
+<script type="module">
+  import { auth, db } from "./firebase-init.js";
+  import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  document.getElementById('toggle-pass').addEventListener('click', function(){
+    const p = document.getElementById('pass');
+    const show = p.type === 'password';
+    p.type = show ? 'text' : 'password';
+    this.textContent = show ? 'Hide' : 'Show';
+  });
+
+  const form = document.getElementById('signup-form');
+  const errorEl = document.getElementById('signup-error');
+  const btn = document.getElementById('signup-btn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.style.display = 'none';
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const exam = document.getElementById('exam').value;
+    const pass = document.getElementById('pass').value;
+
+    btn.disabled = true;
+    btn.textContent = 'Creating account...';
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: name });
+      await setDoc(doc(db, 'users', cred.user.uid), { name, email, exam, createdAt: Date.now() });
+      window.location.href = 'feed.html';
+    } catch (err) {
+      errorEl.textContent = err.message.replace('Firebase: ', '');
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Create account';
+    }
+  });
+
+  async function socialLogin(provider) {
+    errorEl.style.display = 'none';
+    try {
+      const cred = await signInWithPopup(auth, provider);
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        name: cred.user.displayName || '',
+        email: cred.user.email || '',
+        createdAt: Date.now()
+      }, { merge: true });
+      window.location.href = 'feed.html';
+    } catch (err) {
+      errorEl.textContent = err.message.replace('Firebase: ', '');
+      errorEl.style.display = 'block';
+    }
+  }
+
+  document.getElementById('google-btn').addEventListener('click', () => socialLogin(new GoogleAuthProvider()));
+  document.getElementById('github-btn').addEventListener('click', () => socialLogin(new GithubAuthProvider()));
+</script>
+</body>
+</html>
