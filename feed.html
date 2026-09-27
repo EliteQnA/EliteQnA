@@ -10,6 +10,7 @@
 <div class="nav">
   <div class="logo">ELITEQNA</div>
   <div class="links">
+    <a href="home.html">Home</a>
     <a href="feed.html" class="active">Feed</a>
     <a href="submit.html">Post a question</a>
     <a href="index.html">Sign in</a>
@@ -40,15 +41,24 @@
 
   const list = document.getElementById('feed-list');
 
+  function badgeClass(exam){
+    const e = (exam||'').toLowerCase();
+    if (e.includes('jee')) return 'jee';
+    if (e.includes('mext')) return 'mext';
+    if (e.includes('igcse')) return 'igcse';
+    return '';
+  }
+
   function cardHTML(q){
+    const initial = (q.authorName||'S').charAt(0).toUpperCase();
     return `<div class="card q-card">
       <div class="q-top">
-        <span class="q-subject">${q.exam?.toUpperCase()||''} · ${(q.subject||'').toUpperCase()}</span>
+        <span class="q-subject ${badgeClass(q.exam)}">${(q.exam||'').toUpperCase()} · ${(q.subject||'').toUpperCase()}</span>
         <span class="q-meta">${new Date(q.createdAt).toLocaleDateString()}</span>
       </div>
       <p class="q-title">${q.title||''}</p>
-      ${q.photoURL ? `<img src="${q.photoURL}" style="max-width:100%; border-radius:8px;">` : ''}
-      <span class="q-meta">Posted by ${q.authorName||'a student'}</span>
+      ${q.photoURL ? `<img src="${q.photoURL}" style="max-width:100%; border-radius:10px;">` : ''}
+      <span class="q-meta"><span class="avatar">${initial}</span> ${q.authorName||'A student'}</span>
     </div>`;
   }
 
