@@ -19,7 +19,7 @@
   <h1>Create your account</h1>
   <p class="sub">Join students preparing for JEE, MEXT, and IGCSE.</p>
 
-  <form onsubmit="return false;">
+  <form id="signup-form">
     <label for="name">Full name</label>
     <input id="name" type="text" placeholder="Your name">
 
@@ -36,9 +36,38 @@
     <label for="pass">Password</label>
     <input id="pass" type="password" placeholder="••••••••">
 
+    <p id="signup-error" style="color:#e07a5f; font-size:13px; margin:14px 0 0; display:none;"></p>
     <button class="btn btn-gold" type="submit" style="width:100%; margin-top:22px;">Create account</button>
   </form>
   <p class="sub" style="margin-top:16px;">Already have an account? <a href="index.html">Sign in</a></p>
 </div>
+
+<script type="module">
+  import { auth, db } from "./firebase-init.js";
+  import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const form = document.getElementById('signup-form');
+  const errorEl = document.getElementById('signup-error');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.style.display = 'none';
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const exam = document.getElementById('exam').value;
+    const pass = document.getElementById('pass').value;
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: name });
+      await setDoc(doc(db, 'users', cred.user.uid), { name, email, exam, createdAt: Date.now() });
+      window.location.href = 'feed.html';
+    } catch (err) {
+      errorEl.textContent = err.message.replace('Firebase: ', '');
+      errorEl.style.display = 'block';
+    }
+  });
+</script>
 </body>
 </html>

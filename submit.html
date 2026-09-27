@@ -20,7 +20,7 @@
   <h1>Post a question</h1>
   <p class="sub">Every photo is checked automatically before it's shown publicly.</p>
 
-  <form onsubmit="return false;">
+  <form id="submit-form">
     <label for="exam">Exam</label>
     <select id="exam">
       <option>JEE</option>
@@ -37,8 +37,77 @@
     <label for="photo">Attach a photo (optional)</label>
     <input id="photo" type="file" accept="image/*">
 
-    <button class="btn btn-gold" type="submit" style="width:100%; margin-top:22px;">Post question</button>
+    <p id="submit-error" style="color:#e07a5f; font-size:13px; margin:14px 0 0; display:none;"></p>
+    <button class="btn btn-gold" id="submit-btn" type="submit" style="width:100%; margin-top:22px;">Post question</button>
   </form>
 </div>
+
+<script type="module">
+  import { auth, db, storage } from "./firebase-init.js";
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
+
+  const BAD_WORDS = ["fuck","shit","bitch","porn","nude","sex","xxx"]; // basic client-side text filter
+
+  const form = document.getElementById('submit-form');
+  const errorEl = document.getElementById('submit-error');
+  const btn = document.getElementById('submit-btn');
+
+  let user = null;
+  onAuthStateChanged(auth, (u) => { user = u; });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.style.display = 'none';
+
+    if (!user) {
+      errorEl.textContent = 'Please sign in first.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    const exam = document.getElementById('exam').value;
+    const subject = document.getElementById('subject').value.trim();
+    const title = document.getElementById('title').value.trim();
+    const file = document.getElementById('photo').files[0];
+
+    const lower = (subject + ' ' + title).toLowerCase();
+    if (BAD_WORDS.some(w => lower.includes(w))) {
+      errorEl.textContent = 'Your question contains language that is not allowed here.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (!title) {
+      errorEl.textContent = 'Please write your question.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Posting...';
+
+    try {
+      let photoURL = null;
+      if (file) {
+        const fileRef = ref(storage, `questions/${user.uid}_${Date.now()}_${file.name}`);
+        await uploadBytes(fileRef, file);
+        photoURL = await getDownloadURL(fileRef);
+      }
+      await addDoc(collection(db, 'questions'), {
+        exam, subject, title, photoURL,
+        authorId: user.uid,
+        authorName: user.displayName || 'A student',
+        createdAt: Date.now()
+      });
+      window.location.href = 'feed.html';
+    } catch (err) {
+      errorEl.textContent = err.message.replace('Firebase: ', '');
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Post question';
+    }
+  });
+</script>
 </body>
 </html>

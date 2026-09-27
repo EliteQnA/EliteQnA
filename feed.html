@@ -27,34 +27,42 @@
     <button class="tag">IGCSE</button>
   </div>
 
-  <div class="card q-card">
-    <div class="q-top">
-      <span class="q-subject">JEE · PHYSICS</span>
-      <span class="q-meta">Today</span>
-    </div>
-    <p class="q-title">A block slides down a frictionless incline of angle 30°. Find its acceleration.</p>
-    <span class="q-meta">Posted by Aanya · 12 answers</span>
-  </div>
-
-  <div class="card q-card">
-    <div class="q-top">
-      <span class="q-subject">MEXT · ESSAY</span>
-      <span class="q-meta">Today</span>
-    </div>
-    <p class="q-title">What should a MEXT scholarship research proposal include in the first paragraph?</p>
-    <span class="q-meta">Posted by Kenji · 5 answers</span>
-  </div>
-
-  <div class="card q-card">
-    <div class="q-top">
-      <span class="q-subject">IGCSE · CHEMISTRY</span>
-      <span class="q-meta">Yesterday</span>
-    </div>
-    <p class="q-title">Explain why ionic compounds have high melting points, with an example.</p>
-    <span class="q-meta">Posted by Sara · 9 answers</span>
+  <div id="feed-list">
+    <p class="sub">Loading questions…</p>
   </div>
 
   <a href="submit.html" class="btn btn-gold fab">+ Ask</a>
 </div>
+
+<script type="module">
+  import { db } from "./firebase-init.js";
+  import { collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const list = document.getElementById('feed-list');
+
+  function cardHTML(q){
+    return `<div class="card q-card">
+      <div class="q-top">
+        <span class="q-subject">${q.exam?.toUpperCase()||''} · ${(q.subject||'').toUpperCase()}</span>
+        <span class="q-meta">${new Date(q.createdAt).toLocaleDateString()}</span>
+      </div>
+      <p class="q-title">${q.title||''}</p>
+      ${q.photoURL ? `<img src="${q.photoURL}" style="max-width:100%; border-radius:8px;">` : ''}
+      <span class="q-meta">Posted by ${q.authorName||'a student'}</span>
+    </div>`;
+  }
+
+  try {
+    const q = query(collection(db, 'questions'), orderBy('createdAt', 'desc'), limit(30));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      list.innerHTML = '<p class="sub">No questions yet — be the first to ask!</p>';
+    } else {
+      list.innerHTML = snap.docs.map(d => cardHTML(d.data())).join('');
+    }
+  } catch (err) {
+    list.innerHTML = `<p class="sub">Couldn't load questions: ${err.message}</p>`;
+  }
+</script>
 </body>
 </html>
